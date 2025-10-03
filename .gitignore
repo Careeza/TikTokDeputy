@@ -1,0 +1,26 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.env
+.venv
+venv/
+ENV/
+.DS_Store
+
+# Database (will be created on deployment)
+*.db
+*.db-journal
+
+# Old/backup files
+tiktok_results_old.json
+tiktok_results_2.json
+tiktok_results_3.json
+deduplicate_results.py
+

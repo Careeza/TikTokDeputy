@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Deputy Verification</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <!-- SVG Icons Library -->
+    <svg style="display: none;">
+        <symbol id="icon-france" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" fill="#002654"/>
+            <circle cx="12" cy="12" r="7" fill="#fff"/>
+            <circle cx="12" cy="12" r="4" fill="#ED2939"/>
+        </symbol>
+        
+        <symbol id="icon-check" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+        </symbol>
+        
+        <symbol id="icon-close" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+        </symbol>
+        
+        <symbol id="icon-verified" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M23 12l-2.44-2.79.34-3.69-3.61-.82-1.89-3.2L12 2.96 8.6 1.5 6.71 4.69 3.1 5.5l.34 3.7L1 12l2.44 2.79-.34 3.7 3.61.82L8.6 22.5l3.4-1.47 3.4 1.46 1.89-3.19 3.61-.82-.34-3.69L23 12zm-12.91 4.72l-3.8-3.81 1.48-1.48 2.32 2.33 5.85-5.87 1.48 1.48-7.33 7.35z"/>
+        </symbol>
+        
+        <symbol id="icon-link" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+        </symbol>
+        
+        <symbol id="icon-add" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+        </symbol>
+        
+        <symbol id="icon-search" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+        </symbol>
+        
+        <symbol id="icon-download" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/>
+        </symbol>
+        
+        <symbol id="icon-refresh" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+        </symbol>
+    </svg>
+
+    <div class="container">
+        <header>
+            <h1>
+                <svg class="icon-large"><use href="#icon-france"/></svg>
+                Verification des Comptes TikTok des Députés
+            </h1>
+            <div class="stats-bar" id="statsBar">
+                <div class="stat-item">
+                    <span class="stat-label">Total:</span>
+                    <span class="stat-value" id="totalCount">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Vérifiés:</span>
+                    <span class="stat-value" id="verifiedCount">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Non vérifiés:</span>
+                    <span class="stat-value" id="unverifiedCount">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Avec TikTok:</span>
+                    <span class="stat-value" id="withTikTokCount">-</span>
+                </div>
+                <div class="stat-item">
+                    <button class="export-btn" onclick="exportVerifiedAccounts()">
+                        <svg><use href="#icon-download"/></svg>
+                        Exporter CSV
+                    </button>
+                </div>
+            </div>
+            
+            <div class="refresh-bar">
+                <span id="lastUpdateTime" class="last-update-time">Dernière mise à jour: --:--:--</span>
+                <button id="refreshBtn" class="refresh-btn" onclick="manualRefresh()">
+                    <svg class="icon-small"><use href="#icon-refresh"/></svg>
+                    Actualiser
+                </button>
+            </div>
+        </header>
+
+        <div class="filters">
+            <select id="filterVerified" class="filter-select">
+                <option value="">Tous les députés</option>
+                <option value="false">Non vérifiés</option>
+                <option value="true">Vérifiés</option>
+            </select>
+            
+            <select id="filterLegislature" class="filter-select">
+                <option value="">Toutes législatures</option>
+                <option value="XV">XV</option>
+                <option value="XVI">XVI</option>
+                <option value="XVII">XVII</option>
+            </select>
+
+            <select id="sortBy" class="filter-select">
+                <option value="name">Trier par: Nom</option>
+                <option value="confidence-desc" selected>Trier par: Confiance (élevée)</option>
+                <option value="confidence-asc">Trier par: Confiance (faible)</option>
+                <option value="legislature">Trier par: Législature</option>
+            </select>
+
+            <div class="search-wrapper">
+                <svg class="search-icon"><use href="#icon-search"/></svg>
+                <input type="text" id="searchName" class="search-input" placeholder="Rechercher par nom...">
+            </div>
+        </div>
+
+        <div id="deputiesContainer" class="deputies-grid">
+            <!-- Deputy cards will be inserted here -->
+        </div>
+    </div>
+
+    <!-- Modal for detailed view -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="confirm-header">
+                <svg class="confirm-icon"><use href="#icon-close"/></svg>
+                <h3 id="confirmTitle">Confirmation</h3>
+            </div>
+            <p id="confirmMessage"></p>
+            <div class="confirm-buttons">
+                <button class="btn btn-secondary" id="confirmCancel">Annuler</button>
+                <button class="btn btn-primary" id="confirmOk">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

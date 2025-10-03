@@ -1,0 +1,14 @@
+name: deputes-tiktok
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pandas
+  - numpy
+  - requests
+  - beautifulsoup4
+  - jupyter
+  - pip
+  - pip:
+      - sparqlwrapper
