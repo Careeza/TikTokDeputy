@@ -68,6 +68,86 @@ async def read_root():
     return FileResponse("static/index.html")
 
 
+@app.post("/api/initialize-database")
+async def initialize_database(db: Session = Depends(get_db)):
+    """Initialize database from JSON file - only use once on deployment"""
+    import json
+    
+    # Check if already initialized
+    count = db.query(Deputy).count()
+    if count > 0:
+        return {"message": f"Database already initialized with {count} deputies", "already_initialized": True}
+    
+    # Load from JSON
+    try:
+        with open("tiktok_results.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+        
+        # Insert deputies (same logic as load_data.py)
+        for item in data:
+            best_match = item.get("best_match", {})
+            
+            # Enrich top_3_matches with bio and mentions data from best_match
+            top_matches = item.get("top_3_matches", [])
+            enriched_matches = []
+            
+            for match in top_matches:
+                enriched_match = match.copy()
+                
+                if match.get("username") == best_match.get("username"):
+                    enriched_match["bio"] = best_match.get("bio", "")
+                    enriched_match["verified"] = best_match.get("verified", False)
+                    enriched_match["mentions_depute"] = best_match.get("mentions_depute", False)
+                    enriched_match["mentions_assemblee"] = best_match.get("mentions_assemblee", False)
+                    enriched_match["mentions_party"] = best_match.get("mentions_party", False)
+                    enriched_match["mentions_region"] = best_match.get("mentions_region", False)
+                    enriched_match["party_name"] = best_match.get("party_name", "")
+                else:
+                    enriched_match["bio"] = ""
+                    enriched_match["verified"] = False
+                    enriched_match["mentions_depute"] = False
+                    enriched_match["mentions_assemblee"] = False
+                    enriched_match["mentions_party"] = False
+                    enriched_match["mentions_region"] = False
+                    enriched_match["party_name"] = ""
+                
+                enriched_matches.append(enriched_match)
+            
+            deputy = Deputy(
+                name=item["name"],
+                legislatures=item.get("legislatures", []),
+                found=item.get("found", False),
+                best_match_username=best_match.get("username"),
+                best_match_url=best_match.get("url"),
+                best_match_subscribers=best_match.get("subscribers"),
+                best_match_confidence=best_match.get("confidence"),
+                best_match_raw_score=best_match.get("raw_score"),
+                best_match_sources=best_match.get("sources"),
+                best_match_num_sources=best_match.get("num_sources"),
+                best_match_verified=best_match.get("verified"),
+                best_match_bio=best_match.get("bio"),
+                best_match_mentions_depute=best_match.get("mentions_depute"),
+                best_match_mentions_assemblee=best_match.get("mentions_assemblee"),
+                best_match_mentions_party=best_match.get("mentions_party"),
+                best_match_mentions_region=best_match.get("mentions_region"),
+                best_match_party_name=best_match.get("party_name"),
+                top_3_matches=enriched_matches,
+                username_tested=[],
+                username_to_test=[],
+                verified_by_human=False,
+                human_verified_username=None,
+                no_tiktok_account=False
+            )
+            
+            db.add(deputy)
+        
+        db.commit()
+        return {"message": f"Successfully loaded {len(data)} deputies into the database", "count": len(data)}
+    
+    except Exception as e:
+        return {"error": str(e)}, 500
+
+
 @app.get("/api/deputies", response_model=List[DeputyResponse])
 async def get_deputies(
     verified: Optional[bool] = None,
