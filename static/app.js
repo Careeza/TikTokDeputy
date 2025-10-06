@@ -113,8 +113,13 @@ function applyFilters() {
 
     filteredDeputies = deputies.filter(deputy => {
         if (verifiedFilter !== '') {
-            const isVerified = verifiedFilter === 'true';
-            if (deputy.verified_by_human !== isVerified) return false;
+            if (verifiedFilter === 'no_account') {
+                // Filter for deputies marked as having no TikTok account
+                if (!deputy.no_tiktok_account) return false;
+            } else {
+                const isVerified = verifiedFilter === 'true';
+                if (deputy.verified_by_human !== isVerified) return false;
+            }
         }
 
         // Check if legislatures array includes the filtered legislature
@@ -221,11 +226,15 @@ function createDeputyCard(deputy) {
         }
     }
     
-    // Add search button for unverified deputies
-    const searchButton = !deputy.verified_by_human && !deputy.no_tiktok_account ? `
+    // Add search buttons for unverified deputies
+    const searchButtons = !deputy.verified_by_human && !deputy.no_tiktok_account ? `
         <button class="search-tiktok-btn" onclick="event.stopPropagation(); searchTikTok('${deputy.name.replace(/'/g, "\\'")}')">
             <svg class="icon-small"><use href="#icon-search"/></svg>
             Rechercher sur Google
+        </button>
+        <button class="search-tiktok-btn" onclick="event.stopPropagation(); searchTikTokDirect('${deputy.name.replace(/'/g, "\\'")}')">
+            <svg class="icon-small"><use href="#icon-search"/></svg>
+            Rechercher sur TikTok
         </button>
     ` : '';
     
@@ -244,7 +253,7 @@ function createDeputyCard(deputy) {
             </div>
             
             ${content}
-            ${searchButton}
+            ${searchButtons}
         </div>
     `;
 }
@@ -373,12 +382,16 @@ function createModalContent(deputy) {
         `;
     }
     
-    // Add Google search button (always visible except when verified with account)
-    const googleSearchButton = !(deputy.verified_by_human && deputy.human_verified_username) ? `
+    // Add Google and TikTok search buttons (always visible except when verified with account)
+    const searchButtons = !(deputy.verified_by_human && deputy.human_verified_username) ? `
         <div class="google-search-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-            <button class="btn btn-secondary" style="width: 100%;" onclick="searchTikTok('${deputy.name.replace(/'/g, "\\'")}')">
+            <button class="btn btn-secondary" style="width: 100%; margin-bottom: 10px;" onclick="searchTikTok('${deputy.name.replace(/'/g, "\\'")}')">
                 <svg class="icon-small"><use href="#icon-search"/></svg>
                 Rechercher sur Google
+            </button>
+            <button class="btn btn-secondary" style="width: 100%;" onclick="searchTikTokDirect('${deputy.name.replace(/'/g, "\\'")}')">
+                <svg class="icon-small"><use href="#icon-search"/></svg>
+                Rechercher sur TikTok
             </button>
         </div>
     ` : '';
@@ -389,7 +402,7 @@ function createModalContent(deputy) {
             <p>Législature${deputy.legislatures && deputy.legislatures.length > 1 ? 's' : ''}: ${(deputy.legislatures || []).join(', ')} | Statut: ${verifiedStatus}</p>
         </div>
         ${mainContent}
-        ${googleSearchButton}
+        ${searchButtons}
     `;
 }
 
@@ -811,10 +824,16 @@ async function exportVerifiedAccounts() {
     }
 }
 
-// Search TikTok for deputy
+// Search Google for deputy
 function searchTikTok(deputyName) {
     const searchQuery = encodeURIComponent(`${deputyName} député tiktok`);
     window.open(`https://www.google.com/search?q=${searchQuery}`, '_blank');
+}
+
+// Search TikTok directly for deputy
+function searchTikTokDirect(deputyName) {
+    const searchQuery = encodeURIComponent(deputyName);
+    window.open(`https://www.tiktok.com/search?q=${searchQuery}`, '_blank');
 }
 
 // Auto-refresh functionality
