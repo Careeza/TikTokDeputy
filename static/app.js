@@ -225,7 +225,7 @@ function createDeputyCard(deputy) {
     const searchButton = !deputy.verified_by_human && !deputy.no_tiktok_account ? `
         <button class="search-tiktok-btn" onclick="event.stopPropagation(); searchTikTok('${deputy.name.replace(/'/g, "\\'")}')">
             <svg class="icon-small"><use href="#icon-search"/></svg>
-            Rechercher sur TikTok
+            Rechercher sur Google
         </button>
     ` : '';
     
@@ -373,12 +373,23 @@ function createModalContent(deputy) {
         `;
     }
     
+    // Add Google search button (always visible except when verified with account)
+    const googleSearchButton = !(deputy.verified_by_human && deputy.human_verified_username) ? `
+        <div class="google-search-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <button class="btn btn-secondary" style="width: 100%;" onclick="searchTikTok('${deputy.name.replace(/'/g, "\\'")}')">
+                <svg class="icon-small"><use href="#icon-search"/></svg>
+                Rechercher sur Google
+            </button>
+        </div>
+    ` : '';
+    
     return `
         <div class="modal-header">
             <h2>${deputy.name}</h2>
             <p>Législature${deputy.legislatures && deputy.legislatures.length > 1 ? 's' : ''}: ${(deputy.legislatures || []).join(', ')} | Statut: ${verifiedStatus}</p>
         </div>
         ${mainContent}
+        ${googleSearchButton}
     `;
 }
 
