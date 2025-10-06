@@ -148,6 +148,127 @@ async def initialize_database(db: Session = Depends(get_db)):
         return {"error": str(e)}, 500
 
 
+@app.post("/api/initialize-with-verifications")
+async def initialize_with_verifications(db: Session = Depends(get_db)):
+    """Initialize database from JSON and apply verifications from CSV"""
+    import json
+    import csv
+    
+    try:
+        # Step 1: Clear existing data
+        db.query(Deputy).delete()
+        db.commit()
+        
+        # Step 2: Load deputies from JSON
+        with open("tiktok_results.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+        
+        # Insert deputies
+        for item in data:
+            best_match = item.get("best_match", {})
+            
+            # Enrich top_3_matches with bio and mentions data from best_match
+            top_matches = item.get("top_3_matches", [])
+            enriched_matches = []
+            
+            for match in top_matches:
+                enriched_match = match.copy()
+                
+                if match.get("username") == best_match.get("username"):
+                    enriched_match["bio"] = best_match.get("bio", "")
+                    enriched_match["verified"] = best_match.get("verified", False)
+                    enriched_match["mentions_depute"] = best_match.get("mentions_depute", False)
+                    enriched_match["mentions_assemblee"] = best_match.get("mentions_assemblee", False)
+                    enriched_match["mentions_party"] = best_match.get("mentions_party", False)
+                    enriched_match["mentions_region"] = best_match.get("mentions_region", False)
+                    enriched_match["party_name"] = best_match.get("party_name", "")
+                else:
+                    enriched_match["bio"] = ""
+                    enriched_match["verified"] = False
+                    enriched_match["mentions_depute"] = False
+                    enriched_match["mentions_assemblee"] = False
+                    enriched_match["mentions_party"] = False
+                    enriched_match["mentions_region"] = False
+                    enriched_match["party_name"] = ""
+                
+                enriched_matches.append(enriched_match)
+            
+            deputy = Deputy(
+                name=item["name"],
+                legislatures=item.get("legislatures", []),
+                found=item.get("found", False),
+                best_match_username=best_match.get("username"),
+                best_match_url=best_match.get("url"),
+                best_match_subscribers=best_match.get("subscribers"),
+                best_match_confidence=best_match.get("confidence"),
+                best_match_raw_score=best_match.get("raw_score"),
+                best_match_sources=best_match.get("sources"),
+                best_match_num_sources=best_match.get("num_sources"),
+                best_match_verified=best_match.get("verified"),
+                best_match_bio=best_match.get("bio"),
+                best_match_mentions_depute=best_match.get("mentions_depute"),
+                best_match_mentions_assemblee=best_match.get("mentions_assemblee"),
+                best_match_mentions_party=best_match.get("mentions_party"),
+                best_match_mentions_region=best_match.get("mentions_region"),
+                best_match_party_name=best_match.get("party_name"),
+                top_3_matches=enriched_matches,
+                username_tested=[],
+                username_to_test=[],
+                verified_by_human=False,
+                human_verified_username=None,
+                no_tiktok_account=False
+            )
+            
+            db.add(deputy)
+        
+        db.commit()
+        
+        # Step 3: Apply verifications from CSV
+        verification_count = 0
+        try:
+            with open("deputes_tiktok_verified.csv", "r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    name = row.get('Nom')
+                    username = row.get('Username TikTok')
+                    status = row.get('Statut')
+                    
+                    if not name:
+                        continue
+                    
+                    # Find deputy by name
+                    deputy = db.query(Deputy).filter(Deputy.name == name).first()
+                    if not deputy:
+                        continue
+                    
+                    # Apply verification
+                    if status == "Aucun compte TikTok":
+                        deputy.verified_by_human = True
+                        deputy.no_tiktok_account = True
+                        deputy.human_verified_username = None
+                        verification_count += 1
+                    elif status == "Compte vérifié" and username:
+                        deputy.verified_by_human = True
+                        deputy.no_tiktok_account = False
+                        deputy.human_verified_username = username
+                        verification_count += 1
+                
+                db.commit()
+        except FileNotFoundError:
+            # CSV file not found, skip verification step
+            pass
+        
+        return {
+            "message": f"Successfully loaded {len(data)} deputies with {verification_count} verifications",
+            "deputies_count": len(data),
+            "verifications_count": verification_count
+        }
+    
+    except Exception as e:
+        db.rollback()
+        return {"error": str(e)}, 500
+
+
 @app.get("/api/deputies", response_model=List[DeputyResponse])
 async def get_deputies(
     verified: Optional[bool] = None,
